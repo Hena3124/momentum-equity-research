@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+# data cache - regenerate by running data.py
+data/prices.csv
+
+# charts are generated outputs, not source code
+# keeping them tracked so they show up in README
+# visualizations/
+
+# mac junk
+.DS_Store
+
+# jupyter checkpoints if we add notebooks later
+.ipynb_checkpoints/
