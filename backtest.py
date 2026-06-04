@@ -1,3 +1,28 @@
+
+
+# backtest.py
+#
+# this took me a while to get right so leaving detailed notes
+# for my own reference
+#
+# the core idea:
+#   1. on each rebalance day, look at the momentum signal
+#   2. buy the top 5 stocks, short the bottom 5
+#   3. hold for 21 trading days (approx 1 month)
+#   4. measure what actually happened to those positions
+#   5. repeat for the next rebalance day
+#
+# the tricky part is making sure we never use future data.
+# the signal is computed on day T using data up to day T.
+# the returns we measure start from day T+1 onwards.
+# this is what shift(-1) does in the forward_returns line.
+#
+# another thing that confused me early on:
+# we rebalance every 21 days but the periods overlap a bit
+# because we're measuring 21-day forward returns each time.
+# this is fine for a research backtest but worth knowing.
+
+
 import pandas as pd
 import numpy as np
 from data import download_prices
