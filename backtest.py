@@ -28,6 +28,11 @@ import numpy as np
 from data import download_prices
 from signals import compute_momentum
 
+# round-trip transaction cost assumption per position, in basis points
+# this covers bid-ask spread + commissions, roughly. real costs vary
+# a lot by liquidity but 10bps is a reasonable large-cap equity estimate
+TRANSACTION_COST_BPS = 10
+
 
 def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5):
 
@@ -79,7 +84,13 @@ def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5):
         # if our longs go up 3% and shorts go down 2%, we make 5%
         ls_return = long_ret - short_ret
 
-        portfolio_returns.append(ls_return)
+        # subtracting transaction costs - assuming full turnover on both
+        # legs each rebalance (conservative, since in reality some names
+        # stay in the top/bottom bucket two months running)
+        cost = TRANSACTION_COST_BPS / 10000
+        ls_return_net = ls_return - cost
+
+        portfolio_returns.append(ls_return_net)
         dates.append(date)
 
     results = pd.Series(portfolio_returns, index=dates, name="monthly_return")
