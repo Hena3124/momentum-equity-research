@@ -26,7 +26,7 @@
 import pandas as pd
 import numpy as np
 from data import download_prices
-from signals import compute_momentum
+from signals import compute_momentum, compute_mean_reversion
 
 # round-trip transaction cost assumption per position, in basis points
 # this covers bid-ask spread + commissions, roughly. real costs vary
@@ -34,14 +34,14 @@ from signals import compute_momentum
 TRANSACTION_COST_BPS = 10
 
 
-def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5):
+def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5, signal_func=compute_momentum):
 
     
     stock_cols = [c for c in prices.columns if c not in ["SPY", "QQQ"]]
     stocks = prices[stock_cols]
 
     # compute momentum signal
-    past_return, ranks = compute_momentum(stocks, lookback, skip)
+    past_return, ranks = signal_func(stocks, lookback, skip)
 
     # forward returns - what actually happens AFTER we place the trade
     # shift(-1) means "next day's return" - this is what we earn
@@ -53,6 +53,7 @@ def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5):
     # we rebalance monthly - every 21 trading days
     # on each rebalance day, build a long/short portfolio
     portfolio_returns = []
+    gross_returns = []
     dates = []
 
     rebal_days = range(lookback, len(stocks) - 1, 21)
@@ -89,12 +90,14 @@ def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5):
         # stay in the top/bottom bucket two months running)
         cost = TRANSACTION_COST_BPS / 10000
         ls_return_net = ls_return - cost
-
+        gross_returns.append(ls_return)
         portfolio_returns.append(ls_return_net)
+
         dates.append(date)
 
     results = pd.Series(portfolio_returns, index=dates, name="monthly_return")
-    return results
+    gross = pd.Series(gross_returns, index=dates, name="gross_monthly_return")
+    return results,gross
 
 
 def compute_metrics(returns):
@@ -147,7 +150,7 @@ if __name__ == "__main__":
 
     print("running backtest...")
 
-    returns = run_backtest(prices)
+    returns,gross_returns = run_backtest(prices)
 
     print(f"\nbacktest ran for {len(returns)} monthly periods")
     print(f"date range: {returns.index[0].date()} to {returns.index[-1].date()}")

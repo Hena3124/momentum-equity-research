@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     print("loading data and running backtest...")
     prices  = download_prices()
-    returns = run_backtest(prices)
+    returns,gross_returns = run_backtest(prices)
 
     # get SPY returns for benchmark comparison
     spy_prices  = prices["SPY"]
