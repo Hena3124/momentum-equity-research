@@ -13,7 +13,17 @@ def get_sp500_tickers():
         return pd.read_csv(cache_path)["Symbol"].tolist()
 
     print("fetching S&P 500 list from wikipedia...")
-    tables = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+    # wikipedia blocks requests with no user-agent header (403 Forbidden),
+    # so we fetch the page ourselves first and hand the HTML to pandas
+    import requests
+    import io
+
+    url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+
+    tables = pd.read_html(io.StringIO(response.text))
     sp500 = tables[0]
 
     # yfinance wants BRK-B not BRK.B

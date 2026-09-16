@@ -18,6 +18,19 @@ def compute_momentum(prices, lookback=252, skip=21):
 
     return past_return, ranks
 
+def compute_mean_reversion(prices, lookback=21, skip=0):
+    # short-term reversal: stocks that fell recently tend to bounce back
+    # over the next short window, and vice versa. this is the opposite
+    # intuition from momentum, and works over a much shorter horizon
+    # (Jegadeesh 1990, weeks not months)
+
+    past_return = prices.pct_change(lookback)
+
+    # inverting the sign: biggest recent LOSERS get the highest rank
+    # (they're our long candidates), unlike momentum where winners rank highest
+    ranks = (-past_return).rank(axis=1, pct=True)
+
+    return past_return, ranks
 
 def get_long_short(ranks, top_n=5, bottom_n=5):
     # each day, pick the top 5 stocks (long) and bottom 5 (short)
