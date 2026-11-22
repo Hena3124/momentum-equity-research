@@ -78,8 +78,11 @@ def run_backtest(prices, lookback=252, skip=21, top_n=5, bottom_n=5, signal_func
         # this is what we'd earn holding this portfolio for a month
         next_period = forward_returns.iloc[i:i+21]
 
-        long_ret  = next_period[long_stocks].mean(axis=1).mean()
-        short_ret = next_period[short_stocks].mean(axis=1).mean()
+        # compound the daily equal-weighted basket returns over the holding
+        # period to get the actual 21-day return (averaging daily returns
+        # understated the monthly return and mis-scaled the cost charge)
+        long_ret  = (1 + next_period[long_stocks].mean(axis=1)).prod() - 1
+        short_ret = (1 + next_period[short_stocks].mean(axis=1)).prod() - 1
 
         # long-short return: profit from longs, subtract losses from shorts
         # if our longs go up 3% and shorts go down 2%, we make 5%
