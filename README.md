@@ -6,6 +6,8 @@
 
 Short answer: costs turned out to be the smaller problem. A 5-stock long/short momentum book earns a positive average month (+1.5% net, 62% of months profitable), but it's so concentrated that two "momentum crashes" wipe it out. In those months the beaten-down short basket rallied violently: −54% in Feb 2021 and −92% in Jan 2023. Compounded, the strategy loses 78% over 2020–2024, and none of the results are statistically significant.
 
+> **Revision note (Nov 2026):** while re-checking the results I found a bug in my own backtest. It averaged daily returns within each holding period instead of compounding them, which understated volatility (2.9% vs the true 69%) and made transaction costs look like the main story. I fixed it in `backtest.py`, re-ran every number and chart, and the conclusion changed: concentration and crash risk, not costs, are what break this strategy.
+
 ## Data and period
 
 - **Universe:** S&P 500 constituents (~500 tickers, scraped from Wikipedia), plus SPY/QQQ as benchmarks
@@ -61,8 +63,6 @@ Both are the pattern documented by Daniel & Moskowitz (2016, *Momentum Crashes*)
 - **Concentration and crash risk are.** The momentum edge looks real month to month (62% hit rate), but a 5×5 book can't survive the left tail.
 - **Mean reversion flips sign between regimes**, from losing pre-2023 to strongly positive after. That suggests regime-dependence rather than an absent effect, though with 24–47 periods per half it's suggestive, not conclusive.
 - **Nothing is statistically significant.** Five years of monthly data isn't enough power for effects this noisy.
-
-> **Revision note (Nov 2026):** an earlier version averaged daily returns within each holding period instead of compounding them, which understated volatility (2.9% vs 69%) and made transaction costs look like the main story. That's fixed in `backtest.py`, and every number and chart here was re-run.
 
 ## Look-ahead bias controls
 
