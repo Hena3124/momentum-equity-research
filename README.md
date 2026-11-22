@@ -4,7 +4,7 @@
 
 **Does 12-month momentum still earn a premium on large-cap US stocks once you charge realistic trading costs, and how does it compare with short-term mean reversion on the same data?**
 
-Short answer: momentum shows a small positive gross edge that is consistent over time but not statistically significant over 5 years. Mean reversion shows no edge overall, but that "no edge" is two opposite regimes cancelling out.
+Short answer: costs turned out to be the smaller problem. A 5-stock long/short momentum book earns a positive average month (+1.5% net, 62% of months profitable), but it's so concentrated that two "momentum crashes" wipe it out. In those months the beaten-down short basket rallied violently: −54% in Feb 2021 and −92% in Jan 2023. Compounded, the strategy loses 78% over 2020–2024, and none of the results are statistically significant.
 
 ## Data and period
 
@@ -24,28 +24,45 @@ Short answer: momentum shows a small positive gross edge that is consistent over
 
 ## Results
 
-Gross of costs, monthly long/short returns:
+Monthly long/short returns, 10 bps round-trip cost per rebalance:
 
-| metric | momentum | mean reversion |
-|---|---|---|
-| Sharpe ratio | 0.34 | 0.00 |
-| hit rate (profitable months) | 58.3% | 56.3% |
-| t-statistic | 0.75 | 0.01 |
-| p-value | 0.46 | 0.99 |
-| periods | 60 | 71 |
+| metric | momentum net | momentum gross | mean-rev net | mean-rev gross |
+|---|---|---|---|---|
+| total return | −78.1% | −76.4% | −52.8% | −49.3% |
+| annualised return (arithmetic) | 18.4% | 19.6% | 5.7% | 6.9% |
+| annualised vol | 69.2% | 69.2% | 62.1% | 62.1% |
+| Sharpe ratio | 0.27 | 0.28 | 0.09 | 0.11 |
+| max drawdown | −94.9% | −94.6% | −78.7% | −77.9% |
+| hit rate | 61.7% | 61.7% | 56.3% | 57.7% |
+| t-statistic (p-value) | 0.59 (0.55) | 0.63 (0.53) | 0.22 (0.82) | 0.27 (0.79) |
 
-> **Net-of-cost results are being recomputed.** I found a bug in how monthly returns were aggregated: daily returns were averaged instead of compounded over each 21-day holding period. That bug understated return and volatility levels and mis-scaled the 10 bps cost charge. Sharpe, hit rate and the t-tests above are essentially unaffected by that scaling. Return, volatility, drawdown, all net figures and the charts will be updated after the re-run.
+Periods: 60 for momentum (2020–2024; the first year is used up by the lookback) and 71 for mean reversion (2019–2024).
+
+**Why a positive average month still loses 78%:** volatility drag. With monthly returns swinging ±20%, the arithmetic mean says very little about compounded wealth. One −92% month needs a +1,150% month to recover.
+
+**What actually happened in the crashes:**
+
+| month | long basket | short basket | long − short |
+|---|---|---|---|
+| Feb 2021 | MRNA, TSLA, CRWD, TTD, CVNA: −16.8% | OXY, NCLH, CCL, APA, ECHO: +37.3% | −54.1% |
+| Jan 2023 | OXY, TPL, SMCI, EQT, FSLR: +2.0% | CVNA, APP, COIN, GNRC, ALGN: +94.1% | −92.1% |
+
+Both are the pattern documented by Daniel & Moskowitz (2016, *Momentum Crashes*): after a sharp market reversal, the past losers you're short rebound hardest. With only 5 names on the short side, nothing dilutes it.
 
 **Stability (split at Jan 2023, chosen before looking at either half):**
 
 | | 2020–2022 gross Sharpe | 2023–2024 gross Sharpe |
 |---|---|---|
-| momentum | 0.38 | 0.28 |
-| mean reversion | −0.32 | +0.66 |
+| momentum | 0.43 | 0.14 |
+| mean reversion | −0.24 | +0.67 |
 
 **What this says:**
-- Momentum's gross edge points the right way and holds in both halves, but 60 monthly observations isn't enough statistical power to confirm an edge this small (p = 0.46).
-- Mean reversion's flat full-sample result hides a full regime flip. That suggests instability rather than an absent effect, though with roughly 24–36 periods per half it's suggestive, not conclusive.
+- **Costs aren't the binding constraint.** 10 bps a month is small next to a 1.6% mean monthly return. Gross and net Sharpe are nearly identical (0.28 vs 0.27).
+- **Concentration and crash risk are.** The momentum edge looks real month to month (62% hit rate), but a 5×5 book can't survive the left tail.
+- **Mean reversion flips sign between regimes**, from losing pre-2023 to strongly positive after. That suggests regime-dependence rather than an absent effect, though with 24–47 periods per half it's suggestive, not conclusive.
+- **Nothing is statistically significant.** Five years of monthly data isn't enough power for effects this noisy.
+
+> **Revision note (Nov 2026):** an earlier version averaged daily returns within each holding period instead of compounding them, which understated volatility (2.9% vs 69%) and made transaction costs look like the main story. That's fixed in `backtest.py`, and every number and chart here was re-run.
 
 ## Look-ahead bias controls
 
@@ -56,7 +73,7 @@ Gross of costs, monthly long/short returns:
 | Holding periods don't overlap | 21-day rebalance, 21-day hold | Each month's return is measured on fresh data, so no observation is counted twice |
 | Signal parameters come from the literature, not tuning | 12-1 momentum, 1-month reversal | Searching over lookbacks until something works is look-ahead by another name (data snooping) |
 | Out-of-sample split date fixed in advance | `oos_split.py`: `SPLIT_DATE = "2023-01-01"` | Picking the split after seeing results would let hindsight choose the "good" period |
-| Costs and significance tests reported alongside gross returns | `compare_signals.py`, `significance_test.py` | Keeps a gross number that looks good from being read as a tradable result |
+| Net and gross results reported side by side, with significance tests | `compare_signals.py`, `significance_test.py` | Keeps a gross number that looks good from being read as a tradable result |
 
 **Known gaps** (not yet controlled):
 - **Survivorship bias:** the universe is *today's* S&P 500 list, so stocks removed from the index during 2019–2024 are missing. This is itself a form of look-ahead, because it uses knowledge of which companies survived. The fix is point-in-time constituent lists.
@@ -64,16 +81,17 @@ Gross of costs, monthly long/short returns:
 
 ## Limitations
 
-- Only 5 years of data, so there's low power to detect small effects
+- Only 5 years of data, so there's low power to detect effects this noisy
+- Only 5 names per side, so results are dominated by a handful of stocks
 - Flat 10 bps cost model, not based on actual per-stock spread or liquidity data
-- No separate borrow cost on the short leg
+- No separate borrow cost on the short leg, which matters for heavily shorted names like CVNA and COIN
 
 ## Next steps
 
+- **Diversify the book:** long/short deciles (~50 names per side) instead of 5, the standard academic construction
+- **Volatility scaling / crash protection:** scale exposure down when recent strategy volatility spikes (Barroso & Santa-Clara, 2015; Daniel & Moskowitz, 2016)
 - Point-in-time index membership to remove survivorship bias
-- Volatility-scaled position sizing
-- Longer lookback or lower rebalance frequency to cut turnover and costs
-- Fama-French factor exposure analysis
+- Borrow-cost modeling for the short leg
 - Longer history for more statistical power
 
 ## More charts
